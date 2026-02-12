@@ -9,17 +9,20 @@ An advanced multi-agent orchestration system with production-grade features for 
 ## 🌟 Unique Selling Points (USPs)
 
 ### 1. **Multi-Model LLM Support**
+
 - Seamless switching between Claude, GPT-4, Gemini, Llama, and local models
 - Automatic fallback to backup providers
 - Cost optimization through model selection
 
 ### 2. **Advanced Event-Driven Architecture**
+
 - Asynchronous publish/subscribe event bus
 - Event replay for debugging
 - Dead letter queue for failed events
 - Priority-based event processing
 
 ### 3. **Zero-Trust Security**
+
 - Multi-factor authentication support
 - Sliding window rate limiting
 - Real-time threat detection
@@ -27,42 +30,49 @@ An advanced multi-agent orchestration system with production-grade features for 
 - IP blocking and threat scoring
 
 ### 4. **AI-Powered Validation with Auto-Fix**
+
 - Semantic validation using LLMs
 - Automatic error correction
 - Schema validation
 - Custom validation rules
 
 ### 5. **Semantic Memory & Learning**
+
 - Vector embeddings for semantic search
 - Pattern recognition from past executions
 - Learning from failures
 - Knowledge graph construction
 
 ### 6. **Multi-Mode Execution**
+
 - Sequential: Step-by-step execution
 - Parallel: Concurrent task processing
 - Distributed: Cross-worker execution (coming soon)
 - Streaming: Real-time progress updates
 
 ### 7. **Circuit Breaker & Self-Healing**
+
 - Automatic failure detection
 - Graceful degradation
 - Configurable retry strategies (exponential, fibonacci, adaptive)
 - Self-healing workflows
 
 ### 8. **Plugin Architecture**
+
 - Extensible agent system
 - Lifecycle hooks (before/after execution, on success/failure)
 - Custom validator registration
 - Easy integration of new capabilities
 
 ### 9. **Real-Time Monitoring**
+
 - Performance metrics per agent
 - Health checks
 - Execution tracing
 - Resource usage tracking
 
 ### 10. **Production-Grade Design**
+
 - Comprehensive error handling
 - Extensive logging
 - Configurable timeouts
@@ -133,50 +143,79 @@ An advanced multi-agent orchestration system with production-grade features for 
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/goatclaw.git
+git clone https://github.com/Shivay00001/goatclaw.git
 cd goatclaw
 
-# Install dependencies (if you have a requirements.txt)
+# Install dependencies
 pip install -r requirements.txt
 
-# Or run directly
-python -m goatclaw.runner
+# Launch interactive terminal (Recommended)
+python -m goatclaw.cli
 ```
+
+---
+
+## 🎮 Interactive Mode (NEW)
+
+GOATCLAW now features a fully interactive guided terminal. It automatically:
+
+1. **Checks for API keys** in environment variables and `.goatclaw.json`.
+2. **Detects Ollama** locally and guides you through setup if it's missing.
+3. **Prompt for Keys**: If no LLM is found, it will help you set one up.
+4. **Interactive REPL**: Execute goals via the `goatclaw ▸` prompt.
+
+```bash
+python -m goatclaw.cli
+```
+
+Interactive Commands:
+
+- `help`: Show available commands
+- `status`: Check system health and active provider
+- `provider`: Switch between LLM providers on the fly
+- `quit`: Safe exit
 
 ---
 
 ## 🚀 Quick Start
 
-### Basic Example
+### Basic One-Shot CLI
+
+You can execute a goal directly from the command line:
+
+```bash
+# Using local Ollama (auto-detected)
+python -m goatclaw.cli run "Build a simple web scraper"
+
+# Using a specific provider and model
+python -m goatclaw.cli run "Write a FastAPI microservice" --provider nvidia --model moonshotai/kimi-k2.5
+```
+
+### Python API Example
 
 ```python
 import asyncio
 from goatclaw.runner import create_orchestrator, create_default_security_context
-from goatclaw.core.types import TaskGraph, TaskNode, AgentType, PermissionScope
+from goatclaw.core.structs import TaskGraph, TaskNode, AgentType, PermissionScope
 
 async def main():
-    # Create orchestrator
+    # Create orchestrator (auto-resolves LLM from config/.env)
     orch = create_orchestrator()
     await orch.start()
     
-    # Create security context
     ctx = create_default_security_context()
-    
-    # Build task graph
-    graph = TaskGraph(goal_summary="Research and analyze data")
+    graph = TaskGraph(goal_summary="Deep research on AI trends")
     
     node = TaskNode(
         node_id="research_1",
-        name="Research Topic",
+        name="Market Research",
         agent_type=AgentType.RESEARCH,
-        required_permissions=[PermissionScope.READ],
-        input_data={"query": "Python async patterns", "action": "search"}
+        input_data={"query": "AI Agents 2025", "action": "synthesize"}
     )
     graph.add_node(node)
     
-    # Execute
     result = await orch.process_goal(graph, ctx)
-    print(f"Status: {result['status']}")
+    print(f"Goal Status: {result['status']}")
     
     await orch.stop()
 
@@ -221,6 +260,7 @@ await bus.publish(Event(
 ```
 
 **Features:**
+
 - Priority queues
 - Event replay
 - Dead letter queue
@@ -253,6 +293,7 @@ risk = await security.execute(
 ```
 
 **Features:**
+
 - Sliding window rate limiting
 - Threat scoring
 - IP blocking
@@ -276,6 +317,7 @@ result = await validator.execute(node, context)
 ```
 
 **Validation Types:**
+
 - Schema validation
 - Type checking
 - Range validation
@@ -316,6 +358,7 @@ results = await memory.execute(
 ```
 
 **Features:**
+
 - Vector embeddings
 - Pattern recognition
 - Failure analysis
@@ -327,32 +370,38 @@ results = await memory.execute(
 ## 🤖 Agent Types
 
 ### Research Agent
+
 - Web search
 - Document analysis
 - Information synthesis
 
 ### Code Agent
+
 - Code generation
 - Code review
 - Refactoring
 - Test generation
 
 ### DevOps Agent
+
 - Deployment
 - Infrastructure provisioning
 - System monitoring
 
 ### API Agent
+
 - REST API calls
 - GraphQL queries
 - Rate limiting
 
 ### Data Processing Agent
+
 - ETL operations
 - Data cleaning
 - Format conversion
 
 ### FileSystem Agent
+
 - File operations (sandboxed)
 - Directory management
 
@@ -630,7 +679,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - Issues: [GitHub Issues](https://github.com/your-org/goatclaw/issues)
 - Discussions: [GitHub Discussions](https://github.com/your-org/goatclaw/discussions)
-- Email: support@goatclaw.io
+- Email: <support@goatclaw.io>
 
 ---
 
