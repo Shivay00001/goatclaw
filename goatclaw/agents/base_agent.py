@@ -15,6 +15,8 @@ import asyncio
 import time
 import uuid
 import logging
+import os
+import json
 import aiohttp
 from typing import Any, Dict, List, Optional, Callable
 from datetime import datetime
@@ -281,56 +283,160 @@ class BaseAgent(ABC):
 
         return result or {}
 
+    @staticmethod
+    def _load_config_file() -> Dict[str, Any]:
+        """Load config from ~/.goatclaw.json or local .goatclaw.json"""
+        paths = [
+            os.path.join(os.getcwd(), ".goatclaw.json"),
+            os.path.join(os.path.expanduser("~"), ".goatclaw.json"),
+        ]
+        for path in paths:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        return json.load(f)
+                except Exception:
+                    pass
+        return {}
+
+    @staticmethod
+    def _detect_ollama() -> bool:
+        """Check if Ollama is running locally."""
+        import urllib.request
+        try:
+            req = urllib.request.Request("http://localhost:11434/api/tags", method="GET")
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                return resp.status == 200
+        except Exception:
+            return False
+
     async def _get_api_key(self, provider: str, user_id: str) -> Optional[str]:
-        """USP: Securely retrieve and decrypt user API key for the given provider."""
-        from goatclaw.database import db_manager, SecretModel
-        from sqlalchemy import select
-        
-        async with await db_manager.get_session() as session:
-            stmt = select(SecretModel).where(
-                SecretModel.user_id == user_id, 
-                SecretModel.provider == provider
-            )
-            result = await session.execute(stmt)
-            secret_record = result.scalar_one_or_none()
-            
-            if secret_record:
-                return vault.decrypt(secret_record.encrypted_key)
+        """
+        Retrieve API key with fallback chain:
+        1. Environment variable (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+        2. Config file (~/.goatclaw.json)
+        3. Database (encrypted vault)
+        """
+        # 1. Environment variable
+        env_var_map = {
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "deepseek": "DEEPSEEK_API_KEY",
+            "nvidia": "NVIDIA_API_KEY",
+            "kimi": "KIMI_API_KEY",
+            "groq": "GROQ_API_KEY",
+            "together": "TOGETHER_API_KEY",
+        }
+        env_var = env_var_map.get(provider, f"{provider.upper()}_API_KEY")
+        key = os.getenv(env_var)
+        if key:
+            logger.debug(f"API key for {provider} found via env var {env_var}")
+            return key
+
+        # 2. Config file
+        file_config = self._load_config_file()
+        key = file_config.get("api_keys", {}).get(provider)
+        if key:
+            logger.debug(f"API key for {provider} found via config file")
+            return key
+
+        # 3. Database (try, don't crash if DB not ready)
+        try:
+            from goatclaw.database import db_manager, SecretModel
+            from sqlalchemy import select
+            async with await db_manager.get_session() as session:
+                stmt = select(SecretModel).where(
+                    SecretModel.user_id == user_id,
+                    SecretModel.provider == provider
+                )
+                result = await session.execute(stmt)
+                secret_record = result.scalar_one_or_none()
+                if secret_record:
+                    return vault.decrypt(secret_record.encrypted_key)
+        except Exception as e:
+            logger.debug(f"DB key lookup skipped ({e})")
+
         return None
 
     async def _call_llm(self, prompt: str, system: Optional[str] = None, model_config: Optional[Dict] = None) -> str:
-        """Helper to call LLM based on provider config."""
-        model_config = model_config or self.config.get("model", {})
-        provider = model_config.get("provider", "openai")
-        model_name = model_config.get("name", "gpt-4")
+        """Call LLM with smart provider resolution.
+        
+        Priority:
+        1. Explicit model_config passed in
+        2. Agent config (self.config["model"])
+        3. Config file (~/.goatclaw.json)
+        4. Auto-detect: Ollama (local) → fallback simulated response
+        """
+        # Build effective config from multiple sources
+        file_config = self._load_config_file()
+        effective = file_config.get("model", {})
+        effective.update(self.config.get("model", {}))
+        if model_config:
+            effective.update(model_config)
+
+        provider = effective.get("provider", "")
+        model_name = effective.get("name", "")
+
+        # Auto-detect provider if not explicitly set
+        if not provider:
+            # Check if any cloud API key is available
+            for p in ["openai", "anthropic", "deepseek"]:
+                key = await self._get_api_key(p, "system_orchestrator")
+                if key:
+                    provider = p
+                    if not model_name:
+                        defaults = {"openai": "gpt-4", "anthropic": "claude-sonnet-4-20250514", "deepseek": "deepseek-chat"}
+                        model_name = defaults.get(p, "gpt-4")
+                    break
+            
+            # Fallback: check local Ollama
+            if not provider and self._detect_ollama():
+                provider = "ollama"
+                model_name = model_name or "llama3"
+                logger.info(f"Auto-detected Ollama, using model: {model_name}")
+        
+        if not provider:
+            logger.warning("No LLM provider configured and Ollama not running. Using simulated response.")
+            return f"[Simulated] No LLM available. Configure via: goatclaw config set-key <provider> <key>"
+
+        if not model_name:
+            defaults = {
+                "openai": "gpt-4", "anthropic": "claude-sonnet-4-20250514",
+                "deepseek": "deepseek-chat", "ollama": "llama3",
+                "nvidia": "meta/llama-3.1-8b-instruct", "groq": "llama-3.1-8b-instant",
+            }
+            model_name = defaults.get(provider, "gpt-4")
 
         # Record API call metric
         metrics_manager.record_api_call(provider)
 
+        # --- Ollama (local) ---
         if provider == "ollama":
             return await ollama_client.generate(model_name, prompt, system)
-        
-        # USP: Generic API Dispatcher for OpenAI/Anthropic
-        api_key = await self._get_api_key(provider, "system_orchestrator") # Use system key or user context?
-        # In multi-tenant, we'd get context.user_id here
-        
+
+        # --- Cloud providers ---
+        api_key = await self._get_api_key(provider, "system_orchestrator")
         if not api_key:
-            # Fallback for testing/demos
-            logger.warning(f"No API key found for {provider}, using simulated response.")
-            return f"Simulated response from {provider}:{model_name} (No key found)"
+            # Last resort: try Ollama if available
+            if self._detect_ollama():
+                logger.warning(f"No API key for {provider}, falling back to local Ollama")
+                return await ollama_client.generate(model_name or "llama3", prompt, system)
+            logger.warning(f"No API key for {provider}, using simulated response.")
+            return f"[Simulated] {provider}:{model_name} (No key. Set via: goatclaw config set-key {provider} <key>)"
 
         try:
             async with aiohttp.ClientSession() as session:
-                # Provider Endpoints
                 PROVIDERS = {
                     "openai": "https://api.openai.com/v1/chat/completions",
                     "kimi": "https://api.moonshot.cn/v1/chat/completions",
                     "nvidia": "https://integrate.api.nvidia.com/v1/chat/completions",
                     "deepseek": "https://api.deepseek.com/v1/chat/completions",
+                    "groq": "https://api.groq.com/openai/v1/chat/completions",
+                    "together": "https://api.together.xyz/v1/chat/completions",
                 }
 
-                if provider in PROVIDERS or model_config.get("base_url"):
-                    url = model_config.get("base_url") or PROVIDERS.get(provider)
+                if provider in PROVIDERS or effective.get("base_url"):
+                    url = effective.get("base_url") or PROVIDERS.get(provider)
                     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                     payload = {
                         "model": model_name,
@@ -338,7 +444,7 @@ class BaseAgent(ABC):
                             {"role": "system", "content": system or "You are a helpful AI specialist."},
                             {"role": "user", "content": prompt}
                         ],
-                        "temperature": model_config.get("temperature", 0.7)
+                        "temperature": effective.get("temperature", 0.7)
                     }
                     async with session.post(url, headers=headers, json=payload) as resp:
                         if resp.status == 200:
@@ -374,6 +480,10 @@ class BaseAgent(ABC):
 
         except Exception as e:
             logger.error(f"LLM call failed for {provider}: {e}")
+            # Fallback to Ollama on cloud failure
+            if provider != "ollama" and self._detect_ollama():
+                logger.info(f"Cloud LLM failed, falling back to local Ollama")
+                return await ollama_client.generate("llama3", prompt, system)
             return f"Error calling {provider}: {str(e)}"
 
     async def _check_permissions(

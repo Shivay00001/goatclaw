@@ -36,7 +36,8 @@ def create_orchestrator(config: Optional[Dict] = None) -> Orchestrator:
     Factory: build a fully wired Orchestrator with all agents.
     
     Args:
-        config: Configuration dictionary
+        config: Configuration dictionary. If config["model"] is set,
+                it's propagated to all agents for LLM provider configuration.
         
     Returns:
         Configured orchestrator
@@ -44,19 +45,29 @@ def create_orchestrator(config: Optional[Dict] = None) -> Orchestrator:
     config = config or {}
     orch = Orchestrator(config)
 
+    # Build per-agent config, merging global model config
+    global_model = config.get("model", {})
+
+    def agent_config(key: str) -> Dict:
+        """Merge global model config with agent-specific config."""
+        ac = config.get(key) or {}
+        if global_model and "model" not in ac:
+            ac["model"] = global_model
+        return ac
+
     # Register specialist agents
     event_bus = orch.event_bus
-    orch.register_agent(AgentType.RESEARCH, ResearchAgent(event_bus, config.get("research")))
-    orch.register_agent(AgentType.CODE, CodeAgent(event_bus, config.get("code")))
-    orch.register_agent(AgentType.DEVOPS, DevOpsAgent(event_bus, config.get("devops")))
-    orch.register_agent(AgentType.API, APIAgent(event_bus, config.get("api")))
+    orch.register_agent(AgentType.RESEARCH, ResearchAgent(event_bus, agent_config("research")))
+    orch.register_agent(AgentType.CODE, CodeAgent(event_bus, agent_config("code")))
+    orch.register_agent(AgentType.DEVOPS, DevOpsAgent(event_bus, agent_config("devops")))
+    orch.register_agent(AgentType.API, APIAgent(event_bus, agent_config("api")))
     orch.register_agent(
         AgentType.DATA_PROCESSING,
-        DataProcessingAgent(event_bus, config.get("data_processing")),
+        DataProcessingAgent(event_bus, agent_config("data_processing")),
     )
     orch.register_agent(
         AgentType.FILESYSTEM,
-        FileSystemAgent(event_bus, config.get("filesystem", {"sandbox_root": "/tmp/goatclaw"})),
+        FileSystemAgent(event_bus, agent_config("filesystem") or {"sandbox_root": "/tmp/goatclaw"}),
     )
 
     return orch
