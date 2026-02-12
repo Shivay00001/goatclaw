@@ -1,38 +1,3 @@
-<<<<<<< HEAD
-# Dependencies
-node_modules/
-__pycache__/
-*.pyc
-
-# Build output
-dist/
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-
-# Python
-*.egg-info/
-venv/
-.venv/
-
-# Temp
-tsc_errors.txt
-build_output*.txt
-=======
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -59,25 +24,9 @@ wheels/
 
 # Database files
 *.db
-memory.db
-test_billing.db
-test_distributed.db
-test_vault.db
 
 # Logs
 *.log
-cli_demo.log
-cli_demo_final.log
-cli_demo_fixed.log
-cli_run_final.log
-cli_run_prod.log
-cli_run_verbose.log
-error.log
-error_specialists.log
-error_worker.log
-final_test.log
-full_output.log
-test_output.log
 
 # IDEs
 .idea/
@@ -85,14 +34,18 @@ test_output.log
 *.swp
 *.swo
 
+# Environment
+.env
+.env.local
+.env.*.local
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
 # Project specific
 .qodo/
-debug_output.txt
-debug_path.py
-debug_path_file.py
-debug_db.py
-boost_user.py
-check_*.py
-update_imports.py
-mnt/
->>>>>>> d1d6d98 (Shivay00001)
+.bolt/
+node_modules/
