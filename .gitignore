@@ -49,3 +49,5 @@ Thumbs.db
 .qodo/
 .bolt/
 node_modules/
+.goatclaw.json
+
