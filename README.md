@@ -132,66 +132,58 @@ An advanced multi-agent orchestration system with production-grade features for 
 
 ---
 
-## 💻 Installation
+## � Install
 
-### Prerequisites
-
-- Python 3.9+
-- pip
-
-### Install
+The recommended way to install GOATCLAW is via Pip:
 
 ```bash
-# Clone the repository
+pip install goatclaw
+```
+
+Or for development:
+
+```bash
 git clone https://github.com/Shivay00001/goatclaw.git
 cd goatclaw
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Launch interactive terminal (Recommended)
-python -m goatclaw.cli
+pip install -e .
 ```
 
 ---
 
-## 🎮 Interactive Mode (NEW)
+## 🎮 Getting Started (CLI)
 
-GOATCLAW now features a fully interactive guided terminal. It automatically:
-
-1. **Checks for API keys** in environment variables and `.goatclaw.json`.
-2. **Detects Ollama** locally and guides you through setup if it's missing.
-3. **Prompt for Keys**: If no LLM is found, it will help you set one up.
-4. **Interactive REPL**: Execute goals via the `goatclaw ▸` prompt.
+GOATCLAW features a fully interactive guided terminal. Once installed, simply run:
 
 ```bash
-python -m goatclaw.cli
+goatclaw
 ```
 
-Interactive Commands:
+### What happens next?
 
-- `help`: Show available commands
-- `status`: Check system health and active provider
-- `provider`: Switch between LLM providers on the fly
-- `quit`: Safe exit
+1. **Guided Setup**: It checks for available LLMs (Ollama, OpenAI, NVIDIA, etc.).
+2. **Auto-Detection**: If Ollama is running, it will use it as the default local backend.
+3. **Secure Key Entry**: Use `goatclaw config set-key <provider> <key>` to add your own keys.
+4. **Execute Goals**: Type any high-level goal in the REPL (e.g., `goatclaw ▸ Build a landing page`).
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Usage Examples
 
-### Basic One-Shot CLI
+### 1. One-Shot Execution
 
-You can execute a goal directly from the command line:
+Execute a single goal directly from your shell:
 
 ```bash
-# Using local Ollama (auto-detected)
-python -m goatclaw.cli run "Build a simple web scraper"
+# Using auto-detected local Ollama
+goatclaw run "Summarize my recent git commits"
 
-# Using a specific provider and model
-python -m goatclaw.cli run "Write a FastAPI microservice" --provider nvidia --model moonshotai/kimi-k2.5
+# Overriding provider and model
+goatclaw run "Write a technical blog post" --provider nvidia --model moonshotai/kimi-k2.5
 ```
 
-### Python API Example
+### 2. Python SDK Example
+
+Integrate multi-agent orchestration into your own Python applications:
 
 ```python
 import asyncio
