@@ -19,12 +19,17 @@ class MessageBroker:
         self.stream_key = "goatclaw_events"
         self.consumer_group = "goatclaw_group"
         # Unique consumer name for this instance
-        # Unique consumer name for this instance
         self.consumer_name = f"consumer_{os.getpid()}_{uuid.uuid4().hex[:8]}"
         
-        # In-memory fallback
-        self._memory_queue = asyncio.Queue()
+        # In-memory fallback (lazy init)
+        self._memory_queue_instance: Optional[asyncio.Queue] = None
         self._processed_ids = set()
+
+    @property
+    def _memory_queue(self) -> asyncio.Queue:
+        if self._memory_queue_instance is None:
+            self._memory_queue_instance = asyncio.Queue()
+        return self._memory_queue_instance
 
     async def connect(self):
         """Connect to Redis and ensure consumer group exists."""

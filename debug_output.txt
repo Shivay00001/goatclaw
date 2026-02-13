@@ -1,0 +1,7 @@
+RUNNING Validation Schema...
+[DEBUG] _parse_rule incoming rule: 'schema: {"type": "object", "required": ["status", "result"]}' (hex: 736368656d613a207b2274797065223a20226f626a656374222c20227265717569726564223a205b22737461747573222c2022726573756c74225d7d)
+[DEBUG] _execute_validation: type='schema', available=['schema', 'type', 'range', 'format', 'custom', 'semantic']
+[DEBUG] _parse_rule incoming rule: 'schema: {"type": "object", "required": ["status", "result"]}' (hex: 736368656d613a207b2274797065223a20226f626a656374222c20227265717569726564223a205b22737461747573222c2022726573756c74225d7d)
+[DEBUG] _execute_validation: type='schema', available=['schema', 'type', 'range', 'format', 'custom', 'semantic']
+[DEBUG] Validation failed: {'valid': False, 'expected': ['status', 'result'], 'actual': ['status'], 'message': "Missing required fields: ['result']", 'suggestions': ['Add field: result'], 'auto_fixable': True}
+FAILED: 

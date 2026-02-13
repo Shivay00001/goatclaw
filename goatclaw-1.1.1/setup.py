@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="goatclaw",
-    version="1.1.2",
+    version="1.1.1",
     author="Shivay Singh",
     author_email="shivaysinghrajputofficial@gmail.com",
     description="Advanced Multi-Agent Orchestration System with Production-Grade Features",

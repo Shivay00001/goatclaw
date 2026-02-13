@@ -675,6 +675,36 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
+## 🧪 Testing
+
+GOATCLAW uses a comprehensive unified test suite powered by `pytest`.
+
+### Running Tests Locally
+
+1. Install development dependencies:
+
+   ```bash
+   pip install -e .[dev]
+   ```
+
+2. Run the full test suite:
+
+   ```bash
+   pytest tests/
+   ```
+
+3. Run with coverage report:
+
+   ```bash
+   pytest --cov=goatclaw tests/
+   ```
+
+### CI/CD
+
+The project includes a GitHub Actions workflow that automatically runs tests across multiple Python versions (3.9, 3.10, 3.11, 3.12) on every push to the `main` branch.
+
+---
+
 ## 🙏 Acknowledgments
 
 Built with ❤️ using modern Python async patterns and best practices from the distributed systems community.

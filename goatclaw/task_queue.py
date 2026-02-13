@@ -19,8 +19,14 @@ class TaskQueue:
         self.queue_key = "goatclaw_task_queue"
         self.processing_key = "goatclaw_task_processing"
         
-        # In-memory fallback
-        self._memory_queue = asyncio.Queue()
+        # In-memory fallback (lazy init)
+        self._memory_queue_instance: Optional[asyncio.Queue] = None
+
+    @property
+    def _memory_queue(self) -> asyncio.Queue:
+        if self._memory_queue_instance is None:
+            self._memory_queue_instance = asyncio.Queue()
+        return self._memory_queue_instance
         
     async def connect(self):
         self.redis = Redis.from_url(self.redis_url, decode_responses=True)

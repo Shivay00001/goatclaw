@@ -15,6 +15,7 @@ import asyncio
 from typing import Any, Dict, Optional
 import logging
 import json
+import os
 import aiohttp
 
 from goatclaw.core.sandbox import sandbox_manager
@@ -485,7 +486,7 @@ class FileSystemAgent(BaseAgent):
         if action == "read":
             return await self._read_file(path)
         elif action == "write":
-            return await self._write_file(task_node)
+            return await self._write_file(path, task_node)
         elif action == "list":
             return await self._list_directory(path)
         else:
@@ -510,13 +511,14 @@ class FileSystemAgent(BaseAgent):
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    async def _write_file(self, task_node: TaskNode) -> Dict[str, Any]:
+    async def _write_file(self, path: str, task_node: TaskNode) -> Dict[str, Any]:
         """Write actual file contents."""
-        path = task_node.input_data.get("path", "")
         content = task_node.input_data.get("content", "")
         
         # Ensure directory exists
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        dir_name = os.path.dirname(path)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
         
         try:
             with open(path, 'w', encoding='utf-8') as f:
@@ -532,10 +534,28 @@ class FileSystemAgent(BaseAgent):
             return {"status": "error", "error": str(e)}
 
     async def _list_directory(self, path: str) -> Dict[str, Any]:
-        """List directory contents."""
-        return {
-            "action": "list",
-            "path": path,
-            "entries": [],
-            "status": "listed"
-        }
+        """List directory contents recursively."""
+        try:
+            if not os.path.exists(path):
+                return {"status": "error", "error": f"Path not found: {path}"}
+            
+            entries = []
+            for root, dirs, files in os.walk(path):
+                # Ignore common hidden/build dirs
+                if any(ignored in root for ignored in [".git", "__pycache__", "node_modules", ".gemini", "venv", ".venv"]):
+                    continue
+                    
+                for name in files:
+                    if name.endswith(".py"): # focus on python for this demo
+                        rel_path = os.path.relpath(os.path.join(root, name), path)
+                        entries.append(rel_path)
+            
+            return {
+                "action": "list",
+                "path": path,
+                "entries": entries,
+                "count": len(entries),
+                "status": "success"
+            }
+        except Exception as e:
+            return {"status": "error", "error": str(e)}

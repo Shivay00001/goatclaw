@@ -134,31 +134,31 @@ class ValidationAgent(BaseAgent):
         - "schema: {type: object}" -> (schema, {schema: ...})
         - "type: string" -> (type, {expected_type: string})
         """
-        if rule.startswith("schema:"):
-            schema_str = rule[7:].strip()
-            try:
-                schema = json.loads(schema_str)
-                return "schema", {"schema": schema}
-            except json.JSONDecodeError:
-                return "schema", {"schema": {}}
-        
-        if rule.startswith("type:"):
-            expected_type = rule[5:].strip()
-            return "type", {"expected_type": expected_type}
-        
-        if rule.startswith("range:"):
-            range_str = rule[6:].strip()
-            # Parse "min:0,max:100"
-            parts = dict(part.split(":") for part in range_str.split(","))
-            return "range", parts
-        
-        if rule.startswith("format:"):
-            format_type = rule[7:].strip()
-            return "format", {"format": format_type}
-        
-        if rule.startswith("semantic:"):
-            semantic_rule = rule[9:].strip()
-            return "semantic", {"rule": semantic_rule}
+        if ":" in rule:
+            prefix, rest = rule.split(":", 1)
+            prefix = prefix.strip().lower()
+            rest = rest.strip()
+            
+            if prefix == "schema":
+                try:
+                    schema = json.loads(rest)
+                    return "schema", {"schema": schema}
+                except json.JSONDecodeError:
+                    return "schema", {"schema": {}}
+            
+            if prefix == "type":
+                return "type", {"expected_type": rest}
+            
+            if prefix == "range":
+                # Parse "min:0,max:100"
+                parts = dict(part.split(":") for part in rest.split(","))
+                return "range", parts
+            
+            if prefix == "format":
+                return "format", {"format": rest}
+            
+            if prefix == "semantic":
+                return "semantic", {"rule": rest}
         
         # Default to custom expression
         return "custom", {"expression": rule}
