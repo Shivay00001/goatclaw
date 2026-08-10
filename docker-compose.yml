@@ -1,0 +1,1 @@
+version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - "8080:8080"\n    depends_on:\n      - redis\n    environment:\n      - REDIS_URL=redis://redis:6379\n  redis:\n    image: redis:7\n    ports:\n      - "6379:6379"\n
