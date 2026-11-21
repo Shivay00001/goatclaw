@@ -1,5 +1,7 @@
 # GOATCLAW 🚀
 
+Built by [VisionQuantech](https://visionquantech.com) — AI agents, apps & tools for small businesses.
+
 **Greatest Of All Time - Coordinated Large-scale Autonomous Workflows**
 
 An advanced multi-agent orchestration system with production-grade features for autonomous task execution, self-healing workflows, and intelligent automation.
